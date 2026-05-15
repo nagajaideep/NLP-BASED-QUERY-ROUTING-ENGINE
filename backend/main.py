@@ -19,8 +19,10 @@ app.add_middleware(
 )
 
 # ── Load model ──
-_dir = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
-MODEL_PATH = _dir + "/model"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+MODEL_PATH = os.path.join(BASE_DIR, "model").replace("\\", "/")
+FRONTEND_INDEX = os.path.join(PROJECT_ROOT, "frontend", "index.html")
 print(f"Model path: {MODEL_PATH}")
 
 device = torch.device("cpu")
@@ -64,8 +66,7 @@ ANGRY_WORDS = {
 # ── Serve index.html at root ──
 @app.get("/")
 def serve_frontend():
-    index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
-    return FileResponse(index_path)
+    return FileResponse(FRONTEND_INDEX)
 
 
 # ── Schemas ──

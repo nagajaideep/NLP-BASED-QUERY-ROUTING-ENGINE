@@ -5,9 +5,9 @@ classification model.
 
 ## What is included
 
-- `main.py` - FastAPI app and `/predict` API.
-- `index.html` - browser UI served from `/`.
-- `model/` - tokenizer, labels, and model weights.
+- `backend/main.py` - FastAPI app and `/predict` API.
+- `frontend/index.html` - browser UI served from `/`.
+- `backend/model/` - tokenizer, labels, and model weights.
 - `Procfile` - deploy command for platforms that use Procfile-style web apps.
 
 ## Local setup
@@ -15,7 +15,7 @@ classification model.
 ```powershell
 python -m venv venv
 venv\Scripts\python.exe -m pip install -r requirements.txt
-venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
 Open `http://127.0.0.1:8000`.
@@ -23,10 +23,10 @@ Open `http://127.0.0.1:8000`.
 ## Smoke test
 
 ```powershell
-venv\Scripts\python.exe test_model.py
+venv\Scripts\python.exe backend\test_model.py
 ```
 
-The test loads the tokenizer and model from the local `model/` directory.
+The test loads the tokenizer and model from `backend/model/`.
 
 ## API
 
@@ -47,14 +47,14 @@ Example request:
 The app is configured for Python 3.11 and starts with:
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port $PORT
+uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 ```
 
-`model/model.safetensors` is larger than GitHub's normal file limit, so it is
-tracked through Git LFS via `.gitattributes`. Install and enable Git LFS before
-pushing this app to GitHub:
+`backend/model/model.safetensors` is larger than GitHub's normal file limit, so
+it is tracked through Git LFS via `.gitattributes`. Install and enable Git LFS
+before pushing this app to GitHub:
 
 ```bash
 git lfs install
-git lfs track "model/model.safetensors"
+git lfs track "backend/model/model.safetensors"
 ```

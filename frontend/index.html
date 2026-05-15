@@ -128,6 +128,7 @@ body::before {
   gap: 6px;
   margin-bottom: 4px;
 }
+.sidebar-footer .api-status { display: none; }
 .status-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
@@ -135,8 +136,8 @@ body::before {
   transition: background .3s;
 }
 .status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-.status-dot.error { background: var(--red); }
-.status-dot.checking { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.status-dot.error { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.status-dot.checking { background: var(--red); box-shadow: 0 0 6px var(--red); }
 
 /* ── MAIN ── */
 .main {
@@ -155,6 +156,13 @@ body::before {
   border-bottom: 1px solid var(--border);
   background: linear-gradient(180deg, rgba(110,231,183,.03) 0%, transparent 100%);
 }
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 14px;
+}
 .header-tag {
   display: inline-flex;
   align-items: center;
@@ -167,6 +175,20 @@ body::before {
   padding: 3px 10px;
   border-radius: 20px;
   margin-bottom: 14px;
+}
+.backend-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(17,17,24,.85);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
 }
 .header h1 {
   font-size: 32px;
@@ -530,8 +552,8 @@ textarea#queryInput::placeholder { color: var(--muted); }
 
   <div class="sidebar-footer">
     <div class="api-status" title="Status updates when the page loads or a query is routed. No background polling.">
-      <div class="status-dot live" id="statusDot"></div>
-      <span id="statusText">Backend awake</span>
+      <div class="status-dot live"></div>
+      <span>Model router</span>
     </div>
     <div style="margin-top:4px;">DistilBERT · 5 departments</div>
   </div>
@@ -540,6 +562,12 @@ textarea#queryInput::placeholder { color: var(--muted); }
 <!-- MAIN -->
 <main class="main">
   <div class="header">
+    <div class="header-top">
+      <div class="backend-status" title="No background polling. This changes only when the backend serves this page or routes a query.">
+        <div class="status-dot live" id="statusDot"></div>
+        <span id="statusText">Backend active</span>
+      </div>
+    </div>
     <div class="header-tag">● Live NLP Model</div>
     <h1>Customer Support <em>Router</em></h1>
     <p>Powered by fine-tuned DistilBERT · Routes queries to the correct department instantly</p>
@@ -644,7 +672,7 @@ function setBackendStatus(state, label) {
   document.getElementById('statusDot').className = `status-dot ${state}`;
   document.getElementById('statusText').textContent = label;
 }
-setBackendStatus('live', 'Backend awake');
+setBackendStatus('live', 'Backend active');
 
 // ── Keyboard shortcut ──
 function handleKey(e) {
@@ -664,7 +692,7 @@ async function routeQuery() {
 
   const btn = document.getElementById('routeBtn');
   btn.classList.add('loading');
-  setBackendStatus('checking', 'Routing query');
+  setBackendStatus('checking', 'Calling backend');
   btn.innerHTML = '<span class="spinner"></span> Analyzing…';
 
   let result;
@@ -679,7 +707,7 @@ async function routeQuery() {
   } catch (err) {
     btn.classList.remove('loading');
     btn.innerHTML = '⚡ Route Query';
-    setBackendStatus('error', 'Backend offline');
+    setBackendStatus('error', 'Backend unavailable');
     alert(`Could not reach API:\n${err.message}\n\nIf running locally, start the FastAPI server and reload the page.`);
     return;
   }
@@ -773,7 +801,7 @@ async function routeQuery() {
   renderHistory();
 
   // Update status dot
-  setBackendStatus('live', 'Backend awake');
+  setBackendStatus('live', 'Backend active');
 
   btn.classList.remove('loading');
   btn.innerHTML = '⚡ Route Query';

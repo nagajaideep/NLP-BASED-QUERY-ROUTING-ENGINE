@@ -136,6 +136,7 @@ body::before {
 }
 .status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 .status-dot.error { background: var(--red); }
+.status-dot.checking { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
 
 /* ── MAIN ── */
 .main {
@@ -528,9 +529,9 @@ textarea#queryInput::placeholder { color: var(--muted); }
   </div>
 
   <div class="sidebar-footer">
-    <div class="api-status">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Checking API…</span>
+    <div class="api-status" title="Status updates when the page loads or a query is routed. No background polling.">
+      <div class="status-dot live" id="statusDot"></div>
+      <span id="statusText">Backend awake</span>
     </div>
     <div style="margin-top:4px;">DistilBERT · 5 departments</div>
   </div>
@@ -638,20 +639,12 @@ const DEPARTMENTS = {
 const routeCounts = { orders:0, payments:0, returns:0, technical:0, account:0, general:0 };
 let history = [];
 
-// ── Check API status on load ──
-async function checkAPI() {
-  try {
-    const res = await fetch(API_URL + '/health');
-    if (res.ok) {
-      document.getElementById('statusDot').className = 'status-dot live';
-      document.getElementById('statusText').textContent = 'API connected';
-    } else { throw new Error(); }
-  } catch {
-    document.getElementById('statusDot').className = 'status-dot error';
-    document.getElementById('statusText').textContent = 'API offline';
-  }
+// ── Backend status: no background polling, only user-triggered requests ──
+function setBackendStatus(state, label) {
+  document.getElementById('statusDot').className = `status-dot ${state}`;
+  document.getElementById('statusText').textContent = label;
 }
-checkAPI();
+setBackendStatus('live', 'Backend awake');
 
 // ── Keyboard shortcut ──
 function handleKey(e) {
@@ -671,6 +664,7 @@ async function routeQuery() {
 
   const btn = document.getElementById('routeBtn');
   btn.classList.add('loading');
+  setBackendStatus('checking', 'Routing query');
   btn.innerHTML = '<span class="spinner"></span> Analyzing…';
 
   let result;
@@ -685,8 +679,7 @@ async function routeQuery() {
   } catch (err) {
     btn.classList.remove('loading');
     btn.innerHTML = '⚡ Route Query';
-    document.getElementById('statusDot').className = 'status-dot error';
-    document.getElementById('statusText').textContent = 'API offline';
+    setBackendStatus('error', 'Backend offline');
     alert(`Could not reach API:\n${err.message}\n\nIf running locally, start the FastAPI server and reload the page.`);
     return;
   }
@@ -780,8 +773,7 @@ async function routeQuery() {
   renderHistory();
 
   // Update status dot
-  document.getElementById('statusDot').className = 'status-dot live';
-  document.getElementById('statusText').textContent = 'API connected';
+  setBackendStatus('live', 'Backend awake');
 
   btn.classList.remove('loading');
   btn.innerHTML = '⚡ Route Query';

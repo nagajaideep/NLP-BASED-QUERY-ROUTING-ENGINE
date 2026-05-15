@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RouteIQ — AI Customer Support Router</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --accent: #6ee7b7;
+  --accent2: #818cf8;
+  --accent3: #f472b6;
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --font: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+}
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(rgba(110,231,183,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(110,231,183,.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: fixed;
+  top:0; left:0;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--accent); }
+.logo small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+.dept-list { padding: 16px 0; flex:1; }
+.dept-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 4px 20px 8px;
+}
+.dept-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: default;
+  border-left: 3px solid transparent;
+  transition: all .2s;
+}
+.dept-item.active-dept {
+  border-left-color: var(--accent);
+  background: rgba(110,231,183,.06);
+}
+.dept-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items:center; justify-content:center;
+  font-size: 15px;
+  flex-shrink:0;
+}
+.dept-info { flex:1; }
+.dept-name { font-size: 13px; font-weight: 500; }
+.dept-count {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.dept-cnt-badge {
+  font-size: 11px;
+  font-family: var(--mono);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1px 7px;
+  color: var(--muted);
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+}
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background .3s;
+}
+.status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.status-dot.error { background: var(--red); }
+
+/* ── MAIN ── */
+.main {
+  margin-left: 260px;
+  flex:1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  z-index:1;
+}
+
+/* ── HEADER ── */
+.header {
+  padding: 40px 48px 32px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(110,231,183,.03) 0%, transparent 100%);
+}
+.header-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(110,231,183,.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+.header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+}
+.header h1 em { font-style:normal; color:var(--accent); }
+.header p { color: var(--muted); font-size: 14px; }
+
+/* ── INPUT SECTION ── */
+.input-section { padding: 32px 48px; border-bottom: 1px solid var(--border); }
+.input-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+textarea#queryInput {
+  flex:1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  resize: none;
+  height: 80px;
+  outline: none;
+  transition: border-color .2s;
+  line-height: 1.6;
+}
+textarea#queryInput:focus { border-color: rgba(110,231,183,.4); }
+textarea#queryInput::placeholder { color: var(--muted); }
+.route-btn {
+  background: var(--accent);
+  color: #0a0a0f;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 24px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.route-btn:hover { background: #5dd4a6; transform: translateY(-1px); }
+.route-btn:active { transform: translateY(0); }
+.route-btn.loading { opacity: .7; pointer-events: none; }
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(0,0,0,.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ex-chip {
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all .15s;
+}
+.ex-chip:hover { color: var(--text); border-color: var(--accent); }
+
+/* ── RESULT AREA ── */
+.result-area { padding: 32px 48px; flex:1; }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--muted);
+  gap: 10px;
+}
+.empty-icon { font-size: 36px; opacity:.3; }
+
+.result-card {
+  display: none;
+}
+.result-card.show { display: block; }
+
+/* Result top row */
+.result-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.dept-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+.result-meta { flex:1; min-width: 200px; }
+.result-meta-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* Confidence bar */
+.conf-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.conf-bar-bg {
+  flex:1;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.conf-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 10px;
+  width: 0%;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+.conf-pct {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  min-width: 38px;
+  text-align: right;
+}
+
+/* Routing path */
+.path-section { margin-bottom: 20px; }
+.path-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.path-steps {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.path-step {
+  font-size: 12px;
+  font-family: var(--mono);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: var(--muted);
+}
+.path-step.final {
+  color: var(--accent);
+  border-color: rgba(110,231,183,.3);
+  background: rgba(110,231,183,.06);
+}
+.path-arrow { color: var(--accent); font-size: 11px; padding: 0 2px; }
+
+/* Keywords */
+.kw-section { margin-bottom: 20px; }
+.kw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.kw-tag {
+  font-size: 11px;
+  font-family: var(--mono);
+  background: rgba(129,140,248,.1);
+  border: 1px solid rgba(129,140,248,.2);
+  color: var(--accent2);
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+.kw-tag.neg {
+  background: rgba(248,113,113,.1);
+  border-color: rgba(248,113,113,.2);
+  color: var(--red);
+}
+
+/* Fallback */
+.fallback-notice {
+  display: none;
+  background: rgba(251,191,36,.06);
+  border: 1px solid rgba(251,191,36,.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--yellow);
+  margin-bottom: 20px;
+}
+.fallback-notice.show { display: block; }
+
+/* Score breakdown */
+.scores-section { margin-bottom: 24px; }
+.scores-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.score-dept {
+  width: 90px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.score-bar-bg {
+  flex:1;
+  height: 5px;
+  background: var(--surface2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  width: 0%;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+.score-val {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  width: 36px;
+  text-align: right;
+}
+
+/* History */
+.history-section { margin-top: 8px; }
+.history-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .15s;
+  font-size: 12px;
+}
+.history-item:hover { border-color: rgba(110,231,183,.3); }
+.history-dept { font-size: 10px; padding: 2px 7px; border-radius: 4px; border: 1px solid; }
+.history-text { flex:1; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    Route<span>IQ</span>
+    <small>NLP Routing Engine</small>
+  </div>
+
+  <div class="dept-list">
+    <div class="dept-label">Departments</div>
+
+    <div class="dept-item" id="ditem-orders">
+      <div class="dept-icon" style="background:rgba(251,191,36,.1)">📦</div>
+      <div class="dept-info">
+        <div class="dept-name">Orders</div>
+        <div class="dept-count">Shipping & delivery</div>
+      </div>
+      <div class="dept-cnt-badge" id="cnt-orders">0</div>
+    </div>
+
+    <div class="dept-item" id="ditem-payments">
+      <div class="dept-icon" style="background:rgba(110,231,183,.1)">💳</div>
+      <div class="dept-info">
+        <div class="dept-name">Payments</div>
+        <div class="dept-count">Billing & invoices</div>
+      </div>
+      <div class="dept-cnt-badge" id="cnt-payments">0</div>
+    </div>
+
+    <div class="dept-item" id="ditem-returns">
+      <div class="dept-icon" style="background:rgba(244,114,182,.1)">↩️</div>
+      <div class="dept-info">
+        <div class="dept-name">Returns</div>
+        <div class="dept-count">Refunds & cancellations</div>
+      </div>
+      <div class="dept-cnt-badge" id="cnt-returns">0</div>
+    </div>
+
+    <div class="dept-item" id="ditem-technical">
+      <div class="dept-icon" style="background:rgba(129,140,248,.1)">🔧</div>
+      <div class="dept-info">
+        <div class="dept-name">Technical</div>
+        <div class="dept-count">App & account issues</div>
+      </div>
+      <div class="dept-cnt-badge" id="cnt-technical">0</div>
+    </div>
+
+    <div class="dept-item" id="ditem-account">
+      <div class="dept-icon" style="background:rgba(248,113,113,.1)">👤</div>
+      <div class="dept-info">
+        <div class="dept-name">Account</div>
+        <div class="dept-count">Profile & access</div>
+      </div>
+      <div class="dept-cnt-badge" id="cnt-account">0</div>
+    </div>
+
+    <div class="dept-item" id="ditem-general">
+      <div class="dept-icon" style="background:rgba(100,116,139,.1)">💬</div>
+      <div class="dept-info">
+        <div class="dept-name">General</div>
+        <div class="dept-count">Other queries</div>
+      </div>
+      <div class="dept-cnt-badge" id="cnt-general">0</div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="api-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Checking API…</span>
+    </div>
+    <div style="margin-top:4px;">DistilBERT · 5 departments</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="header">
+    <div class="header-tag">● Live NLP Model</div>
+    <h1>Customer Support <em>Router</em></h1>
+    <p>Powered by fine-tuned DistilBERT · Routes queries to the correct department instantly</p>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <div class="input-label">Customer Query</div>
+    <div class="input-row">
+      <textarea id="queryInput" placeholder="Type a customer support query… e.g. 'my order hasn't arrived yet'" onkeydown="handleKey(event)"></textarea>
+      <button class="route-btn" id="routeBtn" onclick="routeQuery()">
+        ⚡ Route Query
+      </button>
+    </div>
+    <div class="examples">
+      <span class="ex-chip" onclick="fillExample(this)">my order hasn't arrived</span>
+      <span class="ex-chip" onclick="fillExample(this)">I was charged twice</span>
+      <span class="ex-chip" onclick="fillExample(this)">app keeps crashing</span>
+      <span class="ex-chip" onclick="fillExample(this)">want to cancel and refund</span>
+      <span class="ex-chip" onclick="fillExample(this)">can't reset my password</span>
+      <span class="ex-chip" onclick="fillExample(this)">wrong item delivered</span>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-area">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🎯</div>
+      <div>Submit a query to see the routing result</div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+
+      <!-- Department badge -->
+      <div class="result-top">
+        <div>
+          <div class="result-meta-label">Routed To</div>
+          <div class="dept-badge" id="deptBadge">—</div>
+        </div>
+        <div class="result-meta">
+          <div class="result-meta-label">Confidence</div>
+          <div class="conf-row">
+            <div class="conf-bar-bg"><div class="conf-bar-fill" id="confBar"></div></div>
+            <div class="conf-pct" id="confPct">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Routing path -->
+      <div class="path-section">
+        <div class="path-label">Routing Path</div>
+        <div class="path-steps" id="pathSteps"></div>
+      </div>
+
+      <!-- Keywords -->
+      <div class="kw-section">
+        <div class="path-label">Detected Tokens</div>
+        <div class="kw-tags" id="kwTags"></div>
+      </div>
+
+      <!-- Low confidence warning -->
+      <div class="fallback-notice" id="fallbackNotice">
+        ⚠ Confidence below 55% — consider routing to a human agent for review.
+      </div>
+
+      <!-- Score breakdown -->
+      <div class="scores-section">
+        <div class="scores-label">All Department Scores</div>
+        <div id="scoreRows"></div>
+      </div>
+
+      <!-- History -->
+      <div class="history-section">
+        <div class="history-label">Query History</div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Config ──
+const API_URL = window.location.origin;
+
+
+// ── Department styling ──
+const DEPARTMENTS = {
+  orders:    { label:'Orders',    icon:'📦', color:'#fbbf24', bg:'rgba(251,191,36,.1)',   border:'rgba(251,191,36,.3)',   queue:'ORDERS-QUEUE'    },
+  payments:  { label:'Payments',  icon:'💳', color:'#6ee7b7', bg:'rgba(110,231,183,.1)', border:'rgba(110,231,183,.3)', queue:'PAYMENTS-QUEUE'  },
+  returns:   { label:'Returns',   icon:'↩️', color:'#f472b6', bg:'rgba(244,114,182,.1)', border:'rgba(244,114,182,.3)', queue:'RETURNS-QUEUE'   },
+  technical: { label:'Technical', icon:'🔧', color:'#818cf8', bg:'rgba(129,140,248,.1)', border:'rgba(129,140,248,.3)', queue:'TECH-QUEUE'       },
+  account:   { label:'Account',   icon:'👤', color:'#f87171', bg:'rgba(248,113,113,.1)', border:'rgba(248,113,113,.3)', queue:'ACCOUNT-QUEUE'   },
+  general:   { label:'General',   icon:'💬', color:'#94a3b8', bg:'rgba(100,116,139,.1)', border:'rgba(100,116,139,.3)', queue:'GENERAL-QUEUE'   },
+};
+
+const routeCounts = { orders:0, payments:0, returns:0, technical:0, account:0, general:0 };
+let history = [];
+
+// ── Check API status on load ──
+async function checkAPI() {
+  try {
+    const res = await fetch(API_URL + '/health');
+    if (res.ok) {
+      document.getElementById('statusDot').className = 'status-dot live';
+      document.getElementById('statusText').textContent = 'API connected';
+    } else { throw new Error(); }
+  } catch {
+    document.getElementById('statusDot').className = 'status-dot error';
+    document.getElementById('statusText').textContent = 'API offline';
+  }
+}
+checkAPI();
+
+// ── Keyboard shortcut ──
+function handleKey(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) routeQuery();
+}
+
+// ── Fill example ──
+function fillExample(el) {
+  document.getElementById('queryInput').value = el.textContent;
+  document.getElementById('queryInput').focus();
+}
+
+// ── Main routing function ──
+async function routeQuery() {
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) { document.getElementById('queryInput').focus(); return; }
+
+  const btn = document.getElementById('routeBtn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="spinner"></span> Analyzing…';
+
+  let result;
+  try {
+    const res = await fetch(`${API_URL}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: query })
+    });
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    result = await res.json();
+  } catch (err) {
+    btn.classList.remove('loading');
+    btn.innerHTML = '⚡ Route Query';
+    document.getElementById('statusDot').className = 'status-dot error';
+    document.getElementById('statusText').textContent = 'API offline';
+    alert(`Could not reach API:\n${err.message}\n\nIf running locally, start the FastAPI server and reload the page.`);
+    return;
+  }
+
+  const dept = DEPARTMENTS[result.department] || DEPARTMENTS.general;
+
+  // Update sidebar counts
+  routeCounts[result.department] = (routeCounts[result.department] || 0) + 1;
+  Object.keys(routeCounts).forEach(k => {
+    const el = document.getElementById('cnt-' + k);
+    if (el) el.textContent = routeCounts[k];
+  });
+
+  // Highlight active dept
+  document.querySelectorAll('.dept-item').forEach(el => el.classList.remove('active-dept'));
+  const ditem = document.getElementById('ditem-' + result.department);
+  if (ditem) ditem.classList.add('active-dept');
+
+  // Show result card
+  document.getElementById('emptyState').style.display = 'none';
+  const card = document.getElementById('resultCard');
+  card.classList.remove('show');
+  void card.offsetWidth;
+  card.classList.add('show');
+
+  // Department badge
+  const badge = document.getElementById('deptBadge');
+  badge.textContent = dept.icon + ' ' + dept.label;
+  badge.style.background = dept.bg;
+  badge.style.borderColor = dept.border;
+  badge.style.color = dept.color;
+
+  // Confidence bar
+  const pct = Math.round(result.confidence * 100);
+  document.getElementById('confPct').textContent = pct + '%';
+  document.getElementById('confBar').style.width = '0%';
+  setTimeout(() => { document.getElementById('confBar').style.width = pct + '%'; }, 50);
+
+  // Routing path
+  const steps = ['Input', 'DistilBERT', 'Softmax', dept.queue];
+  document.getElementById('pathSteps').innerHTML = steps.map((s, i) =>
+    i === steps.length - 1
+      ? `<span class="path-step final">${s}</span>`
+      : `<span class="path-step">${s}</span><span class="path-arrow">→</span>`
+  ).join('');
+
+  // Keywords
+  const kwContainer = document.getElementById('kwTags');
+  kwContainer.innerHTML = '';
+  (result.matched_keywords || []).forEach(kw => {
+    const s = document.createElement('span');
+    s.className = 'kw-tag'; s.textContent = kw;
+    kwContainer.appendChild(s);
+  });
+  if (result.is_urgent) {
+    const s = document.createElement('span');
+    s.className = 'kw-tag neg'; s.textContent = '⚡ urgent';
+    kwContainer.appendChild(s);
+  }
+
+  // Fallback warning
+  document.getElementById('fallbackNotice').classList.toggle('show', result.confidence < 0.55);
+
+  // Score breakdown
+  const rows = document.getElementById('scoreRows');
+  rows.innerHTML = '';
+  Object.entries(result.all_scores)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([key, score]) => {
+      const d = DEPARTMENTS[key] || DEPARTMENTS.general;
+      const p = Math.round(score * 100);
+      const row = document.createElement('div');
+      row.className = 'score-row';
+      row.innerHTML = `
+        <div class="score-dept">${d.icon} ${d.label}</div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" style="width:0%;background:${d.color}" data-target="${p}"></div>
+        </div>
+        <div class="score-val">${p}%</div>`;
+      rows.appendChild(row);
+    });
+  setTimeout(() => {
+    document.querySelectorAll('.score-bar-fill').forEach(el => {
+      el.style.width = el.dataset.target + '%';
+    });
+  }, 80);
+
+  // History
+  history.unshift({ query, dept: result.department, deptObj: dept });
+  if (history.length > 8) history.pop();
+  renderHistory();
+
+  // Update status dot
+  document.getElementById('statusDot').className = 'status-dot live';
+  document.getElementById('statusText').textContent = 'API connected';
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '⚡ Route Query';
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <span class="history-dept" style="color:${h.deptObj.color};border-color:${h.deptObj.border};background:${h.deptObj.bg}">
+        ${h.deptObj.icon} ${h.deptObj.label}
+      </span>
+      <span class="history-text">${h.query}</span>`;
+    item.onclick = () => {
+      document.getElementById('queryInput').value = h.query;
+      routeQuery();
+    };
+    list.appendChild(item);
+  });
+}
+</script>
+</body>
+</html>
